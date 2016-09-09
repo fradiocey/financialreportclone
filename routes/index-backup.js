@@ -15,7 +15,6 @@ var pilediameter = [];
 
 var totalexcel = 0;
 var totalsheet = 0;
-var completed = 0;
 
 // Change the config settings to match your 
 // SQL Server and database
@@ -49,86 +48,54 @@ sql.execute( {
   var workbook1 = excelbuilder.createWorkbook('./', 'Summary List for'+workbookID[j]+' - '+workbookName[j]+'.xlsx');
   }*/
 
- var workbook1 = "";
+
 //get file name
 sql.execute( { 
   query: "SELECT id, ProjectCode, ProjectName FROM BplProject " 
 } ).then( function( result ) {
+  //console.log(result)
   totalexcel = result.length;
-  //for (var i=0; i < 4; i++){
-  //workbookID.push(result[i].ProjectCode);
-  //workbookName.push(result[i].ProjectName);
-  //getPile(result[i].id,result[i].ProjectCode,result[i].ProjectName);
-  //}
-  
-  var y = 0;
-  var loopWorkbook = function(result){
-    var projCode = result[y].ProjectCode
-     console.log ("RUN WORKBOOK"+y) 
-    getPile(result[y].id,result[y].ProjectCode,result[y].ProjectName,function(){
-    
-      y++
-      if (y < result.length){
-      loopWorkbook(result);
-      }
-      
-    })
+  for (var i=0; i < totalexcel; i++){
+  workbookID.push(result[i].ProjectCode);
+  workbookName.push(result[i].ProjectName);
   }
-  //start loopWorkbook
-  loopWorkbook(result) 
 
   
 }, function( err ) {
-        console.log( "Something bad happened:", err );s
+        console.log( "Something bad happened:", err );
     } );
 
-function getPile(id,workcode,workname,callback1){
-workbook1 = excelbuilder.createWorkbook('./', 'Summary List for '+workcode+'-'+workname+'.xlsx');
 
-console.log(workbook1)
+var workbook1 = excelbuilder.createWorkbook('./', 'Summary List for.xlsx');
 // get pile diameter
- 
 sql.execute( {  
-  query: "SELECT distinct pilediameter FROM bplpile where Project_Id = "+id+" order by PileDiameter asc " 
+  query: "SELECT distinct pilediameter FROM bplpile where Project_Id = 5 order by PileDiameter asc " 
 } ).then( function( result ) {
   console.log(result)
+
   totalsheet = result.length;
   var x = 0;
   for (var i = 0; i < totalsheet; i++){
   pilediameter.push(result[i].pilediameter)
   }
- 
+  //;
+
+  //for (var i = 0; i < totalsheet; i++){  
+  
+    // getExcel(result[i].pilediameter,i);
+  //}
   var i = 0;
   var loopSheet = function(result){
-    
-    getExcel(id,result[i].pilediameter,workcode,workname,function(){
+    getExcel(result[i].pilediameter,i,function(){
       i++
       if (i < result.length){
         loopSheet(result);
-         completed = 0
       }
-      else{
-        console.log("Completed")
-        completed = 1
-         workbook1.save(function (err) {
-        if (err)
-        throw err;
-      else
-      console.log('congratulations, your workbook created');
-  });  
-        callback1();
-      
-       
-      }
+
     })
-    
   }
   // start loopSheet
-  
   loopSheet(result)
-
-  //callback();
-
 
 
 
@@ -136,53 +103,41 @@ sql.execute( {
         console.log( "Something bad happened:", err );
     } );
 
-}
+
 
 
 
 // execute strdproc 
-function getExcel(id,pileno,projCode,projName,callback){
-
+function getExcel(pileno,curno,callback){
+console.log(pileno)
 sql.execute( {      
-        query: "execute dbo.usp_SummaryList "+id+","+pileno+""
+        query: "execute dbo.usp_SummaryList 5,"+pileno+""
     } ).then( function( result ) {
  
+ console.log("Here"+pileno)
   var totaldata = result.length+5;
   //for (var k=0; k < totalsheet; k++){
   
-  var sheet1 = workbook1.createSheet(pileno, 26, totaldata)
+  var sheet1 = workbook1.createSheet(pileno, 25, totaldata)
   //}
     // header
-  sheet1.set(2, 1, 'Summary List for '+projCode+'-'+projName+'' );
+  sheet1.set(2, 1, 'Summary List - Project Name');
   //type
-  sheet1.set(1, 3, 'Pile Details');
   sheet1.set(6, 3, 'General Details');
   sheet1.set(11, 3, 'Pile Details');
   sheet1.set(17, 3, 'Steel Cage');
   sheet1.set(21, 3, 'Concrete');
   // type center
-  sheet1.align(1, 3, 'center');
   sheet1.align(6, 3, 'center');
   sheet1.align(11, 3, 'center');
   sheet1.align(17, 3, 'center');
   sheet1.align(21, 3, 'center');
   //merge table
-  sheet1.merge({col:1,row:3},{col:4,row:3});
   sheet1.merge({col:6,row:3},{col:9,row:3});
   sheet1.merge({col:11,row:3},{col:15,row:3});
   sheet1.merge({col:17,row:3},{col:19,row:3});
-  sheet1.merge({col:21,row:3},{col:26,row:3});
+  sheet1.merge({col:21,row:3},{col:25,row:3});
   // type border
-  sheet1.border(1, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
-  sheet1.border(2, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
-  sheet1.border(3, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
-  sheet1.border(4, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
-
-  sheet1.border(1, 4, {left:'medium',top:'thin',right:'thin',bottom:'medium'});
-  sheet1.border(2, 4, {left:'thin',top:'thin',right:'thin',bottom:'medium'});
-  sheet1.border(3, 4, {left:'thin',top:'thin',right:'thin',bottom:'medium'});
-  sheet1.border(4, 4, {left:'thin',top:'thin',right:'medium',bottom:'medium'});
-
   sheet1.border(6, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
   sheet1.border(7, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
   sheet1.border(8, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
@@ -218,14 +173,12 @@ sql.execute( {
   sheet1.border(23, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
   sheet1.border(24, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
   sheet1.border(25, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
-  sheet1.border(26, 3, {left:'medium',top:'medium',right:'medium',bottom:'thin'});
   
   sheet1.border(21, 4, {left:'medium',top:'thin',right:'thin',bottom:'medium'});
   sheet1.border(22, 4, {left:'thin',top:'thin',right:'thin',bottom:'medium'});
   sheet1.border(23, 4, {left:'thin',top:'thin',right:'thin',bottom:'medium'});
   sheet1.border(24, 4, {left:'thin',top:'thin',right:'thin',bottom:'medium'});
-  sheet1.border(25, 4, {left:'thin',top:'thin',right:'thin',bottom:'medium'});
-  sheet1.border(26, 4, {left:'thin',top:'thin',right:'medium',bottom:'medium'});
+  sheet1.border(25, 4, {left:'thin',top:'thin',right:'medium',bottom:'medium'});
  
 
   // Fill some data
@@ -251,7 +204,7 @@ sql.execute( {
     //gap
   sheet1.set(16, 4, '');
   //end gap
-  sheet1.set(17, 4, 'Reinforcement Content');
+  sheet1.set(17, 4, 'Reinforcement Contain');
   sheet1.set(18, 4, 'Helical/Spiral');
   sheet1.set(19, 4, 'Cage Length');
      //gap
@@ -262,7 +215,6 @@ sql.execute( {
   sheet1.set(23, 4, 'Wastage (%)');
   sheet1.set(24, 4, 'Grade');
   sheet1.set(25, 4, 'DO Number');
-  sheet1.set(26, 4, 'Concrete Volume');
 // end create a new worksheet
 
 // wrap header true
@@ -291,7 +243,6 @@ sheet1.wrap(22, 4, 'true');
 sheet1.wrap(23, 4, 'true');
 sheet1.wrap(24, 4, 'true');
 sheet1.wrap(25, 4, 'true');
-sheet1.wrap(26, 4, 'true');
 
 // header center
 
@@ -320,23 +271,15 @@ sheet1.align(22, 4, 'center');
 sheet1.align(23, 4, 'center');
 sheet1.align(24, 4, 'center');
 sheet1.align(25, 4, 'center');
-sheet1.align(26, 4, 'center');
 
 for (var i = 5; i < totaldata; i++){
-//parseFloat
-var Platform = result[i-5].v5;
-if (typeof Platform  != "undefined" || Platform != null){
-var PlatformparseFloat = parseFloat(Platform).toFixed(3)
-console.log(PlatformparseFloat)
-sheet1.set(6, i, PlatformparseFloat);
-}
    
 sheet1.set(1, i, result[i-5].v1);
 sheet1.set(2, i, result[i-5].v2);
 sheet1.set(3, i, result[i-5].v3);
 sheet1.set(4, i, result[i-5].v4);
 sheet1.set(5, i, "");
-
+sheet1.set(6, i, result[i-5].v5);
 sheet1.set(7, i, result[i-5].v6);
 sheet1.set(8, i, result[i-5].v7);
 sheet1.set(9, i, result[i-5].v8);
@@ -356,7 +299,6 @@ sheet1.set(22, i, result[i-5].v18);
 sheet1.set(23, i, result[i-5].v19);
 sheet1.set(24, i, result[i-5].v20);
 sheet1.set(25, i, result[i-5].v21);
-sheet1.set(26, i, result[i-5].v22);
 
 
 // wrap true
@@ -385,37 +327,6 @@ sheet1.wrap(22, i, 'true');
 sheet1.wrap(23, i, 'true');
 sheet1.wrap(24, i, 'true');
 sheet1.wrap(25, i, 'true');
-sheet1.wrap(26, i, 'true');
-
-// border
-sheet1.border(1, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(2, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(3, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(4, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-//sheet1.border(5, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(6, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(7, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(8, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(9, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-//sheet1.border(10, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(11, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(12, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(13, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(14, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(15, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-//sheet1.border(16, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(17, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(18, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(19, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-//sheet1.border(20, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(21, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(22, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(23, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(24, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(25, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-sheet1.border(26, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
-
-
 
 
     
@@ -446,12 +357,21 @@ sheet1.width(22, '10');
 sheet1.width(23, '10');
 sheet1.width(24, '10');
 sheet1.width(25, '10');
-sheet1.width(26, '10');
 
 sheet1.merge({col:1,row:1},{col:23,row:1});
 callback();
 
  
+
+
+if (curno == parseInt(totalsheet-1) ){
+   workbook1.save(function(err){
+    if (err)
+      throw err;
+    else
+      console.log('congratulations, your workbook created');
+  });  
+}  
     
     }, function( err ) {
         console.log( "Something bad happened:", err );
