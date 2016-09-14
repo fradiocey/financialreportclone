@@ -1,14 +1,72 @@
 var express = require('express');
 var router = express.Router();
 var async = require("async");
+var SMB2 = require('smb2');
+
+var fs = require('fs-extra')
+const MFS = require("mfs");
+
+/*// create an SMB2 instance 
+var smb2Client = new SMB2({
+  share:'\\\\mymswfs01\\'
+, domain:'sunway.com'
+, username:'mazim'
+, password:'Fradiocey10'
+, debug: false,
+  autoCloseTimeout: 0
+});
+
+smb2Client.mkdir('180-Public\\BPMS\\Test', function (err) {
+    if (err) throw err;
+    console.log('Folder created!');
+});
+*/
+
+ 
+/*fs.copy('smb:\\\\mymswfs01\\180-Public\\BPMS\\Book1.xlsx', '//mymswfs01/180-Public/Test/BPMS/sample.xlsx', function (err) {
+  if (err) return console.error(err)
+  console.log("success!")
+}) // copies file */
+
+
+/*function copyFile(source, target, cb) {
+  var cbCalled = false;
+
+  var rd = fs.createReadStream(source);
+  rd.on("error", function(err) {
+    done(err);
+  });
+  var wr = fs.createWriteStream(target);
+  wr.on("error", function(err) {
+    done(err);
+  });
+  wr.on("close", function(ex) {
+    done();
+  });
+  rd.pipe(wr);
+
+  function done(err) {
+    if (!cbCalled) {
+      cb(err);
+      cbCalled = true;
+    }
+  }
+
+ 
+/*fs.copy('/tmp/mydir', '/tmp/mynewdir', function (err) {
+  if (err) return console.error(err)
+  console.log('success!')
+}) // copies directory, even if it has subdirectories or files*/
 
 var sql = require("seriate");
 var prodID = 5;
 var PileDim = 880;
 var operation = 0;
 
+var excelbuilder = require('msexcel-builder');
+//var excelbuilder = require('msexcel-builder-colorfix-intfix');
 //var excelbuilder = require('msexcel-builder');
-var excelbuilder = require('msexcel-builder-colorfix-intfix');
+//var excelbuilder = require('msexcel-builder-colorfix');
 var workbookName = [];
 var workbookID = [];
 var pilediameter = [];
@@ -91,7 +149,7 @@ console.log(workbook1)
 sql.execute( {  
   query: "SELECT distinct pilediameter FROM bplpile where Project_Id = "+id+" order by PileDiameter asc " 
 } ).then( function( result ) {
-  console.log(result)
+  //console.log(result)
   totalsheet = result.length;
   var x = 0;
   for (var i = 0; i < totalsheet; i++){
@@ -108,7 +166,7 @@ sql.execute( {
          completed = 0
       }
       else{
-        console.log("Completed")
+        //console.log("Completed")
         completed = 1
          workbook1.save(function (err) {
         if (err)
@@ -150,7 +208,7 @@ sql.execute( {
   var totaldata = result.length+5;
   //for (var k=0; k < totalsheet; k++){
   
-  var sheet1 = workbook1.createSheet(pileno, 26, totaldata)
+  var sheet1 = workbook1.createSheet(''+pileno+'', 26, totaldata)
   //}
     // header
   sheet1.set(2, 1, 'Summary List for '+projCode+'-'+projName+'' );
@@ -327,7 +385,7 @@ for (var i = 5; i < totaldata; i++){
 var Platform = result[i-5].v5;
 if (typeof Platform  != "undefined" || Platform != null){
 var PlatformparseFloat = parseFloat(Platform).toFixed(3)
-console.log(PlatformparseFloat)
+//console.log(PlatformparseFloat)
 sheet1.set(6, i, PlatformparseFloat);
 }
    
@@ -339,21 +397,21 @@ sheet1.set(5, i, "");
 
 sheet1.set(7, i, result[i-5].v6);
 sheet1.set(8, i, result[i-5].v7);
-sheet1.set(9, i, result[i-5].v8);
+sheet1.set(9, i, parseFloat(result[i-5].v8).toFixed(3));
 sheet1.set(10, i, "");
-sheet1.set(11, i, result[i-5].v9);
-sheet1.set(12, i, result[i-5].v10);
+sheet1.set(11, i, parseFloat(result[i-5].v9).toFixed(3));
+sheet1.set(12, i, parseFloat(result[i-5].v10).toFixed(3));
 sheet1.set(13, i, result[i-5].v11);
-sheet1.set(14, i, result[i-5].v12);
-sheet1.set(15, i, result[i-5].v13);
+sheet1.set(14, i, parseFloat(result[i-5].v12).toFixed(1));
+sheet1.set(15, i, parseFloat(result[i-5].v13).toFixed(1));
 sheet1.set(16, i, "");
 sheet1.set(17, i, result[i-5].v14);
 sheet1.set(18, i, result[i-5].v15);
 sheet1.set(19, i, result[i-5].v16);
 sheet1.set(20, i, "");
-sheet1.set(21, i, result[i-5].v17);
-sheet1.set(22, i, result[i-5].v18);
-sheet1.set(23, i, result[i-5].v19);
+sheet1.set(21, i, parseFloat(result[i-5].v17).toFixed(1));
+sheet1.set(22, i, parseFloat(result[i-5].v18).toFixed(1));
+sheet1.set(23, i, parseFloat(result[i-5].v19).toFixed(1));
 sheet1.set(24, i, result[i-5].v20);
 sheet1.set(25, i, result[i-5].v21);
 sheet1.set(26, i, result[i-5].v22);
@@ -416,8 +474,7 @@ sheet1.border(25, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
 sheet1.border(26, i, {left:'thin',top:'thin',right:'thin',bottom:'thin'});
 
 
-
-
+//sheet1.numberFormat(2,1, 10); // equivalent to above
     
 }
 
